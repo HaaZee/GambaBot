@@ -24,7 +24,7 @@
     - Track last seen? - last time in vc/message sent
 
 ## Useful links
-Supabase Python Docs: https://supabase.com/docs/reference/python/order
-Nextcord Docs: https://docs.nextcord.dev/en/stable/api.html
-Supabase Dashboard: https://docs.nextcord.dev/en/stable/api.html
+Supabase Python Docs: https://supabase.com/docs/reference/python/order <br>
+Nextcord Docs: https://docs.nextcord.dev/en/stable/api.html <br>
+Supabase Dashboard: https://docs.nextcord.dev/en/stable/api.html <br>
 Discord Developer Application: https://discord.com/developers/applications/1163549322835669033/bot
