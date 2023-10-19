@@ -25,7 +25,7 @@ extensions = [
     "commands.cf",
     "commands.pay",
     "commands.stats",
-    "commands.help" # FIXME: This doesn't return any commands when ti runs
+    "commands.help" # FIXME: This doesn't return any commands when it runs
 ]
 
 bot.load_extensions(extensions)
