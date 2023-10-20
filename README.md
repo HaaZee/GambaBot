@@ -10,8 +10,6 @@
 
 ## Enhancements
 - Custom bets, like twitch predictions
-- Coinflip other players
-    - Either have to challenge them, or you just open coinflips and they sit there until someone joins
 - Roulette (Not sure how this works?)
 - Typing challenges, first to type X gets coins
 - Way to earn coins
