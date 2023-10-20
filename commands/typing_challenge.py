@@ -9,7 +9,7 @@ class typingchallenge(commands.Cog):
 
     @nextcord.slash_command(name="typingchallenge", description="Start a typing challenge")
     async def typingchallenge(self, interaction : nextcord.Interaction):
-        print("Typing Challenge")
+        await interaction.send("Typing Challenge")
 
         
 def setup(bot: commands.Bot):
