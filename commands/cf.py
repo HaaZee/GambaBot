@@ -34,8 +34,11 @@ class cf(commands.Cog):
         
         # Send message to coinflip channel
         channelId = nextcord.utils.get(interaction.guild.channels, name="public-coinflips")
+        if channelId == None:
+            await interaction.send("This server is missing a `public-coinflips` text channel. Please ask a staff member to create it.")
+            return
         newPublicCoinflipEmbed = nextcord.Embed(title="Gamba!", description="New Coinflip", colour=nextcord.Colour.green())
-        newPublicCoinflipEmbed.add_field(name="Creator:", value=f"{await self.bot.fetch_user(interaction.user.id)}", inline=False)
+        newPublicCoinflipEmbed.add_field(name="Creator:", value=f"{coinflipOwner.mention}", inline=False)
         newPublicCoinflipEmbed.add_field(name="Wagered:", value=f"{wager:,}", inline=False)
         newPublicCoinflipEmbed.add_field(name="Joined:", value="Nobody has joined yet.", inline=False)
 
@@ -50,16 +53,47 @@ class cf(commands.Cog):
         await channelId.send(embed=newPublicCoinflipEmbed, view=view)
 
         async def JoinCallback(interaction):
+            if interaction.user == coinflipOwner:
+                return
+            
+            # Disable buttons
+            joinButton.disabled = True
+            inviteBotButton.disabled = True
+            await interaction.message.edit(embed=newPublicCoinflipEmbed, view=view)
+
+            # Check joiner can afford
             joiner = interaction.user
-            # TODO: Check if they have enough money
-            await channelId.send(f"{await self.bot.fetch_user(joiner.id)} Joined {coinflipOwner}'s Coinflip for {wager}!")
+            joinerCoins = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", joiner.id).execute().data[0]['coins']
+            if joinerCoins < wager:
+                await channelId.send("You do not have enough money!", ephemeral=True)
+                joinButton.disabled = False
+                inviteBotButton.disabled = False
+                await interaction.message.edit(embed=newPublicCoinflipEmbed, view=view)
+                return
+            
+            await channelId.send(f"{joiner.mention} Joined {coinflipOwner.mention}'s Coinflip for {wager:,}!")
 
-            # Update embed with joiner
+            await Run(interaction, joiner)
+
+        async def InviteBotButtonCallback(interaction):
+            # Check only owner inviting bot
+            if interaction.user != coinflipOwner:
+                return
+            
+            # Disable buttons
+            joinButton.disabled = True
+            inviteBotButton.disabled = True
+            await interaction.message.edit(embed=newPublicCoinflipEmbed, view=view)
+
+            await channelId.send(f"Bot Joe Joined {coinflipOwner.mention}'s Coinflip for {wager}!")
+
+            await Run(interaction, "Bot Joe")
+
+        async def Run(interaction, joiner):
+             # Update embed with joiner
             newPublicCoinflipEmbed.remove_field(2)
-            newPublicCoinflipEmbed.add_field(name="Joined:", value=joiner, inline=False)
+            newPublicCoinflipEmbed.add_field(name="Joined:", value=joiner.mention if joiner != "Bot Joe" else joiner, inline=False)
             await interaction.message.edit(embed=newPublicCoinflipEmbed)
-
-            # TODO: On player join @ both players and start countdown
 
             # Generate results
             (winner, loser) = RollCoinflip(joiner)
@@ -71,22 +105,23 @@ class cf(commands.Cog):
             # Send result message 
             await SendResult(winner, loser)
 
-            # Update embed with Winner. TODO: @ the players
-            newPublicCoinflipEmbed.add_field(name="Winner:", value=winner, inline=False)
+            # Update embed with Winner
+            newPublicCoinflipEmbed.add_field(name="Winner:", value=winner.mention if winner != "Bot Joe" else winner, inline=False)
             await interaction.message.edit(embed=newPublicCoinflipEmbed)
-
-        async def InviteBotButtonCallback(interaction):
-            await channelId.send("Bot Joe Joined!")
-
+        
         def RollCoinflip(joiner):
             if bool(random.randint(0,1)):
                 return (coinflipOwner, joiner)
             return (joiner, coinflipOwner)
             
         async def SendResult(winner, loser):
-            await channelId.send(f"{winner} beat {loser} winning {wager:,}!!")
+            winnerMention = winner.mention if winner != "Bot Joe" else winner
+            loserMention = loser.mention if loser != "Bot Joe" else loser
+            await channelId.send(f"{winnerMention} beat {loserMention} winning {wager:,}!")
 
         def UpdateWinner(winner):
+            if winner == "Bot Joe":
+                return
             winnerData = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", winner.id).execute().data[0]
             updateData = {}
             updateData["coins_won"] = winnerData['coins_won'] + wager
@@ -95,6 +130,8 @@ class cf(commands.Cog):
             self.supabase.table('Users').update(updateData).eq('id', winner.id).execute()
         
         def UpdateLoser(loser):
+            if loser == "Bot Joe":
+                return
             loserData = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", loser.id).execute().data[0]
             updateData = {}
             updateData["coins_lost"] = loserData['coins_lost'] + wager
