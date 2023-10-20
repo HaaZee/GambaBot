@@ -25,6 +25,7 @@ extensions = [
     "commands.cf",
     "commands.pay",
     "commands.stats",
+    "commands.typing_challenge",
     "commands.help" # FIXME: This doesn't return any commands when ti runs
 ]
 
