@@ -6,7 +6,7 @@ class pay(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.supabase = self.bot.get_cog('SupabaseClient').getClient()
-
+    
     @nextcord.slash_command(name="pay", description="Coinflip!")
     async def pay(self,
                   interaction : nextcord.Interaction, 
