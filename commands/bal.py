@@ -2,7 +2,7 @@ import nextcord
 from nextcord.ext import commands
 
 class bal(commands.Cog):
-	def __init__(self, bot):
+    def __init__(self, bot):
         self.bot = bot
         self.supabase = self.bot.get_cog('SupabaseClient').getClient()
 
@@ -17,9 +17,9 @@ class bal(commands.Cog):
         if len(coinsData) < 1:
             await interaction.send("User not found.", ephemeral=True)
             return
-        
+
         coinCount = coinsData[0]['coins']
-            
+
         embed = nextcord.Embed(title="Coin Balance", description="", colour=nextcord.Colour.green())
         embed.add_field(name="User:", value=f"{await self.bot.fetch_user(fetchUser.id)}", inline=False)
         embed.add_field(name="Balance:", value=f"{coinCount:,}", inline=False)
