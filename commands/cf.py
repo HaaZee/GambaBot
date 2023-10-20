@@ -18,10 +18,8 @@ class cf(commands.Cog):
         ownerData = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", interaction.user.id).execute().data[0]
         ownerCoins = ownerData['coins']
 
-        # Parse the wager into an int
-        wager = moneyHelper.parse_string_to_int(betamount)
-        if betamount == "all":
-            wager = moneyHelper.parse_string_to_int(ownerCoins)
+        # Parse the wager into an int and handle all ins
+        wager = ownerCoins if betamount == "all" else moneyHelper.parse_string_to_int(betamount)
 
         # Check if the creator has enough balance for the coinflip
         if ownerCoins < wager:
@@ -65,7 +63,7 @@ class cf(commands.Cog):
             joiner = interaction.user
             joinerCoins = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", joiner.id).execute().data[0]['coins']
             if joinerCoins < wager:
-                await channelId.send("You do not have enough money!", ephemeral=True)
+                await interaction.send("You do not have enough money!", ephemeral=True)
                 joinButton.disabled = False
                 inviteBotButton.disabled = False
                 await interaction.message.edit(embed=newPublicCoinflipEmbed, view=view)
