@@ -14,7 +14,6 @@ class cf(commands.Cog):
                  interaction : nextcord.Interaction, 
                  betamount: str = nextcord.SlashOption(name="amount")):
 
-
         coinflipOwner = interaction.user
         ownerData = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", interaction.user.id).execute().data[0]
         ownerCoins = ownerData['coins']
