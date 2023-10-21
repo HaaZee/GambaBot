@@ -9,10 +9,7 @@ headers={"X-Riot-Token": str(os.getenv("RIOT_KEY")),
         "Accept-Charset": "application/x-www-form-urlencoded; charset=UTF-8",
         "Origin": "https://developer.riotgames.com"} 
 
-def queryRiotForGameData(username):
-    summonerData = requests.get("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+username, headers=headers)
-    summonerDataJson = summonerData.json()
-    puuid = summonerDataJson['puuid']
+def queryRiotForGameData(puuid):
     getMatches = requests.get("https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/"+str(puuid)+"/ids?start=0&count=20", headers=headers)
     lastGameID = getMatches.json()[0] # 0 is the last game played
     lastGameStats = requests.get("https://europe.api.riotgames.com/lol/match/v5/matches/"+lastGameID, headers=headers)
@@ -20,10 +17,7 @@ def queryRiotForGameData(username):
     return list(map(lambda stat : {"gold": stat["goldEarned"], "win": stat["win"], "pentaKills": stat["pentaKills"] },stats))
 
 
-def preventDoubleClaimAndUpdateLastGame(username, supabase, interaction):
-    summonerData = requests.get("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+username, headers=headers)
-    summonerDataJson = summonerData.json()
-    puuid = summonerDataJson['puuid']
+def preventDoubleClaimAndUpdateLastGame(puuid, supabase, interaction):
     getMatches = requests.get("https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/"+str(puuid)+"/ids?start=0&count=20", headers=headers)
     lastGameID = getMatches.json()[0] # 0 is the last game played
 
@@ -36,12 +30,6 @@ def preventDoubleClaimAndUpdateLastGame(username, supabase, interaction):
     newDbPrevGameStatus["previous_league_game_id"] = lastGameID
     supabase.table('Users').update(newDbPrevGameStatus).eq('id', interaction.user.id).execute()
     return False
-
-
-def getUsernameFromUuid(uuid):
-    response = requests.get("https://europe.api.riotgames.com/riot/account/v1/accounts/by-puuid/"+uuid, headers=headers)
-    username = response.json()
-    return username["gameName"]
 
 def updatePlayerCoins(supabase, interaction, riotData, coinsData):
     newPlayerCoinsValue = {}
@@ -63,12 +51,11 @@ class redeem(commands.Cog):
             await interaction.send("Error: Use /register <LeagueUsername> to register discord and league")
             return
 
-        lolusername = getUsernameFromUuid(playerUuid)
-        if (preventDoubleClaimAndUpdateLastGame(lolusername, self.supabase, interaction)):
+        if (preventDoubleClaimAndUpdateLastGame(playerUuid, self.supabase, interaction)):
             await interaction.send("Error: Can't Redeem the same game twice")
             return
 
-        riotData = queryRiotForGameData(lolusername)[0]
+        riotData = queryRiotForGameData(playerUuid)[0]
         message = "You lost L"
 
         if (riotData["win"] == True):
@@ -76,8 +63,6 @@ class redeem(commands.Cog):
             updatePlayerCoins(self.supabase,interaction,riotData,coinsData)
 
         await interaction.send(message)
-
-        
 
 def setup(bot: commands.Bot):
     bot.add_cog(redeem(bot))
