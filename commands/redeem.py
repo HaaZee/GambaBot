@@ -21,10 +21,6 @@ def queryRiotForGameData(username):
 
 
 def preventDoubleClaimAndUpdateLastGame(username, supabase, interaction):
-     # check last game id in db
-        # if none update to lastgameID
-        # if same as current then return error
-        # if not same as current then update and continue
     summonerData = requests.get("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+username, headers=headers)
     summonerDataJson = summonerData.json()
     puuid = summonerDataJson['puuid']
