@@ -26,7 +26,9 @@ extensions = [
     "commands.pay",
     "commands.stats",
     "commands.help", # FIXME: This doesn't return any commands when it runs
-    "commands.roulette"
+    "commands.roulette",
+    "commands.redeem",
+    "commands.register"
 ]
 
 bot.load_extensions(extensions)

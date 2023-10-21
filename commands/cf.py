@@ -20,6 +20,9 @@ class cf(commands.Cog):
 
         # Parse the wager into an int and handle all ins
         wager = ownerCoins if betamount == "all" else moneyHelper.parse_string_to_int(betamount)
+        if wager <= 0:
+            await interaction.send("Bet amount must be greater than 0.", ephemeral=True)
+            return
 
         # Check if the creator has enough balance for the coinflip
         if ownerCoins < wager:
