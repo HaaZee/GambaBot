@@ -45,7 +45,7 @@ def getUsernameFromUuid(uuid):
 
 def updatePlayerCoins(supabase, interaction, riotData, coinsData):
     newPlayerCoinsValue = {}
-    newPlayerCoinsValue["coins"] = int((riotData["gold"] * ((riotData["pentaKills"] / 10) + 0.1))) + coinsData[0]["coins"]
+    newPlayerCoinsValue["coins"] = int((riotData["gold"] * ((riotData["pentaKills"] / 10) + 0.1))) + coinsData
     supabase.table('Users').update(newPlayerCoinsValue).eq('id', interaction.user.id).execute()
 
 class redeem(commands.Cog):
@@ -55,26 +55,25 @@ class redeem(commands.Cog):
 
     @nextcord.slash_command(name="redeem", description="Redeem League win for points!")
     async def redeem(self, interaction : nextcord.Interaction):
-        coinsData = self.supabase.table('Users').select("coins").eq("id", interaction.user.id).execute().data
-        playerUuid = self.supabase.table('Users').select("league_uuid").eq("id", interaction.user.id).execute().data
+        databaseData = self.supabase.table('Users').select("coins, league_uuid").eq("id", interaction.user.id).execute().data
+        playerUuid = databaseData[0]["league_uuid"]
+        coinsData = databaseData[0]["coins"]
 
-        if (playerUuid[0]["league_uuid"] == None):
+        if (playerUuid == None):
             await interaction.send("Error: Use /register <LeagueUsername> to register discord and league")
             return
 
-        lolusername = getUsernameFromUuid(playerUuid[0]["league_uuid"])
+        lolusername = getUsernameFromUuid(playerUuid)
         if (preventDoubleClaimAndUpdateLastGame(lolusername, self.supabase, interaction)):
             await interaction.send("Error: Can't Redeem the same game twice")
             return
 
         riotData = queryRiotForGameData(lolusername)[0]
-        message = ""
+        message = "You lost L"
 
         if (riotData["win"] == True):
-            message = f"Awarding 10% of your {riotData['gold']} match gold for a win! \n New Balance is now " + str(int((riotData["gold"] * 0.1)) + coinsData[0]["coins"])
+            message = f"Awarding a base 10% of your {riotData['gold']} match gold for a win! Pentakills reward an additional 10% \n New Balance is now {int((riotData['gold'] * 0.1)) + coinsData}"
             updatePlayerCoins(self.supabase,interaction,riotData,coinsData)
-        else:
-            message = "You lost L"
 
         await interaction.send(message)
 
