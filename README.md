@@ -6,6 +6,7 @@
     - SUPABASE_URL
     - SUPABASE_KEY
     - DISCORD_TOKEN
+    - RIOT_KEY
 3. Run `python main.py`
 
 ## Enhancements
@@ -26,3 +27,4 @@ Supabase Python Docs: https://supabase.com/docs/reference/python/order <br>
 Nextcord Docs: https://docs.nextcord.dev/en/stable/api.html <br>
 Supabase Dashboard: https://docs.nextcord.dev/en/stable/api.html <br>
 Discord Developer Application: https://discord.com/developers/applications/1163549322835669033/bot
+Riot Games API: https://developer.riotgames.com/
