@@ -14,12 +14,16 @@ class cf(commands.Cog):
                  interaction : nextcord.Interaction, 
                  betamount: str = nextcord.SlashOption(name="amount")):
 
+
         coinflipOwner = interaction.user
         ownerData = self.supabase.table('Users').select("coins, coins_wagered, coins_won,coins_lost").eq("id", interaction.user.id).execute().data[0]
         ownerCoins = ownerData['coins']
 
         # Parse the wager into an int and handle all ins
         wager = ownerCoins if betamount == "all" else moneyHelper.parse_string_to_int(betamount)
+        if wager <= 0:
+            await interaction.send("Bet amount must be greater than 0.", ephemeral=True)
+            return
 
         # Check if the creator has enough balance for the coinflip
         if ownerCoins < wager:
