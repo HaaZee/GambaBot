@@ -75,7 +75,7 @@ class redeem(commands.Cog):
         message = ""
 
         if (riotData["win"] == True):
-            message = "Awarding 10% of your match gold for a win! \n New Balance is now " + str(int((riotData["gold"] * 0.1)) + coinsData[0]["coins"])
+            message = f"Awarding 10% of your {riotData['gold']} match gold for a win! \n New Balance is now " + str(int((riotData["gold"] * 0.1)) + coinsData[0]["coins"])
             updatePlayerCoins(self.supabase,interaction,riotData,coinsData)
         else:
             message = "You lost L"
