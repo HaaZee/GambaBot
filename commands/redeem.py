@@ -19,15 +19,38 @@ def queryRiotForGameData(username):
     stats = filter(lambda participant : participant["puuid"] == puuid,lastGameStats.json()["info"]["participants"])
     return list(map(lambda stat : {"gold": stat["goldEarned"], "win": stat["win"], "pentaKills": stat["pentaKills"] },stats))
 
+
+def preventDoubleClaimAndUpdateLastGame(username, supabase, interaction):
+     # check last game id in db
+        # if none update to lastgameID
+        # if same as current then return error
+        # if not same as current then update and continue
+    summonerData = requests.get("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/"+username, headers=headers)
+    summonerDataJson = summonerData.json()
+    puuid = summonerDataJson['puuid']
+    getMatches = requests.get("https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/"+str(puuid)+"/ids?start=0&count=20", headers=headers)
+    lastGameID = getMatches.json()[0] # 0 is the last game played
+
+    databaseLastGame = supabase.table('Users').select("previous_league_game_id").eq("id", interaction.user.id).execute().data[0]
+
+    if (databaseLastGame["previous_league_game_id"] == lastGameID):
+        return True
+
+    newDbPrevGameStatus = {}
+    newDbPrevGameStatus["previous_league_game_id"] = lastGameID
+    supabase.table('Users').update(newDbPrevGameStatus).eq('id', interaction.user.id).execute()
+    return False
+
+
 def getUsernameFromUuid(uuid):
     response = requests.get("https://europe.api.riotgames.com/riot/account/v1/accounts/by-puuid/"+uuid, headers=headers)
     username = response.json()
     return username["gameName"]
 
 def updatePlayerCoins(supabase, interaction, riotData, coinsData):
-    y = {}
-    y["coins"] = int((riotData["gold"] * ((riotData["pentaKills"] / 10) + 0.1))) + coinsData[0]["coins"]
-    supabase.table('Users').update(y).eq('id', interaction.user.id).execute()
+    newPlayerCoinsValue = {}
+    newPlayerCoinsValue["coins"] = int((riotData["gold"] * ((riotData["pentaKills"] / 10) + 0.1))) + coinsData[0]["coins"]
+    supabase.table('Users').update(newPlayerCoinsValue).eq('id', interaction.user.id).execute()
 
 class redeem(commands.Cog):
     def __init__(self, bot):
@@ -42,8 +65,12 @@ class redeem(commands.Cog):
         if (playerUuid[0]["league_uuid"] == None):
             await interaction.send("Error: Use /register <LeagueUsername> to register discord and league")
             return
-        
+
         lolusername = getUsernameFromUuid(playerUuid[0]["league_uuid"])
+        if (preventDoubleClaimAndUpdateLastGame(lolusername, self.supabase, interaction)):
+            await interaction.send("Error: Can't Redeem the same game twice")
+            return
+
         riotData = queryRiotForGameData(lolusername)[0]
         message = ""
 
