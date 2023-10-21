@@ -15,6 +15,7 @@ class betInput(nextcord.ui.Modal):
         
         self.add_item(self.betAmount)
 
+
         
 
 
@@ -38,7 +39,7 @@ class Gamba(commands.Cog):
                  
                  ):
         
-
+        participants = {}
         bet_creator = interaction.user.id
         bet_message_embed = nextcord.Embed(
             title="New Bet",
@@ -69,18 +70,25 @@ class Gamba(commands.Cog):
 
 
         
-        async def yes_button_callback(interaction):
-            betInputModal = betInput()
-            await interaction.response.send_modal(betInputModal)                    
-            
-            
-        async def no_button_callback(interaction):
+        async def yes_button_callback(interaction : nextcord.Interaction):
+            userID = interaction.user.id
             betInputModal = betInput()
             await interaction.response.send_modal(betInputModal)
+            participants.update({betInputModal.betAmount : interaction.user.id}) 
+            print(betInputModal.betAmount)
+            print(participants)                   
+            
+            
+        async def no_button_callback(interaction : nextcord.Interaction):
+            betInputModal = betInput()
+            await interaction.response.send_modal(betInputModal)
+            participants.update({betInputModal.betAmount : interaction.user.id})
 
-        async def third_button_callback(interaction):
+        async def third_button_callback(interaction : nextcord.Interaction):
             betInputModal = betInput()
             await interaction.response.send_modal(betInputModal)
+            participants.update({betInputModal.betAmount : interaction.user.id})
+
 
 
         async def lock_button_callback(interaction):
