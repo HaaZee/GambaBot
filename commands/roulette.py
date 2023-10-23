@@ -15,27 +15,40 @@ class Bet(nextcord.ui.Modal):
         self.add_item(self.bet)
     
     async def callback(self, interaction: nextcord.Interaction):
-        print(f"{self.bet.value} placed on {self.placedOn}")
         betValue = int(self.bet.value)
-        insertData = {'id': interaction.user.id, self.placedOn: betValue}
-        existingData = self.supabase.table('Roulette').select("*").eq("id", interaction.user.id).execute().data
-        if len(existingData) > 0:
-            updateData = {self.placedOn: int(existingData[0][self.placedOn]) + betValue}
-            self.supabase.table('Roulette').update(updateData).eq('id', interaction.user.id).execute()
+        insertRouletteData = {'id': interaction.user.id, self.placedOn: betValue}
+        existingUsersData = self.supabase.table('Users').select("coins").eq("id", interaction.user.id).execute().data[0]
+        if existingUsersData["coins"] < betValue:
+            await interaction.send("Your bet was not made. Insufficient funds.")
             return
-        self.supabase.table('Roulette').upsert(insertData).execute()
+        
+        newCoinBalance = existingUsersData["coins"] - betValue
+        updateUsersData = {"coins": newCoinBalance}
+        self.supabase.table('Users').update(updateUsersData).eq("id", interaction.user.id).execute().data
+
+        existingRouletteData = self.supabase.table('Roulette').select("*").eq("id", interaction.user.id).execute().data
+        if len(existingRouletteData) > 0:
+            updatRouletteeData = {self.placedOn: int(existingRouletteData[0][self.placedOn]) + betValue}
+            self.supabase.table('Roulette').update(updatRouletteeData).eq('id', interaction.user.id).execute()
+            return
+        self.supabase.table('Roulette').upsert(insertRouletteData).execute()
+
+        # TODO: Display a live bets screen
 
 class roulette(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.board = ""
         self.categories = {}
-
-        self.GetBoard()
         self.supabase = self.bot.get_cog('SupabaseClient').getClient()
 
     @nextcord.slash_command(name="roulette", description="Start a roulette round!")
     async def roulette(self, interaction : nextcord.Interaction):
+        if interaction.user.id != 289006054128484352: # FIXME: Temporary disable command for everyone else
+            return
+        self.SetBoardAndCategories()
+        channelName = interaction.channel.name
+        channel = nextcord.utils.get(interaction.guild.channels, name=channelName)
         # Add buttons
         view = View()
         first12Button = Button(style=nextcord.ButtonStyle.green, label="1st 12",row=1,custom_id="first12")
@@ -70,7 +83,10 @@ class roulette(commands.Cog):
 
         message = await interaction.send(self.board, view=view)
         async def RunRoulette(interaction):
-            await asyncio.sleep(2)
+            await channel.send(f"Roulette starting in 30 seconds...")
+            await asyncio.sleep(20)
+            await channel.send(f"Roulette starting in 10 seconds...")
+            await asyncio.sleep(10)
             # Disable all buttons
             first12Button.disabled = True
             second12Button.disabled = True
@@ -86,14 +102,30 @@ class roulette(commands.Cog):
             second18Button.disabled = True
             betSpecificNumberButton.disabled = True
             await message.edit(view=view)
+            await channel.send(f"No more bets!")
+            await asyncio.sleep(1)
             # Simulate roll
-            drawn = random.randint(1,36)
-            self.board += f"\n The wheel rolled {str(drawn)} \n Winning categories: \n {winning_categories}"
-            await message.edit(self.board)
+            drawn = random.randint(1,36) 
             # Calculate what columns are getting paid out
             winning_categories = [category for category, numbers in self.categories.items() if drawn in numbers]
-            # TODO: Pay out for those categories
-            # TODO: Clear DB
+            winning_colour = "red" if "red" in winning_categories else "black"
+            await channel.send(f"The wheel rolled {winning_colour} {str(drawn)} \nWinning categories: \n{winning_categories}")
+            await channel.send("Paying winners!")
+            # Calculate winners
+            for category in winning_categories:
+                winnerData = self.supabase.table('Roulette').select(f"id, {category}").neq(category, 0).execute().data
+                for winner in winnerData:
+                    userData = self.supabase.table('Users').select("id, coins").eq("id", winner['id']).execute().data[0]
+                    wager = winner[category]
+                    updateData = {}
+                    updateData["coins"] = userData["coins"] + wager
+                    self.supabase.table('Users').update(updateData).eq("id", winner['id']).execute()
+                    await channel.send(f"{(await self.bot.fetch_user(winner['id'])).mention} won {wager} with a winning bet on {category}. New balance: {updateData['coins']}")
+
+            # Clear DB
+            self.board = ""
+            self.categories = {}
+            response = self.supabase.table('Roulette').delete().neq("id", 0).execute()
             return
         
         self.bot.loop.create_task(RunRoulette(interaction))
@@ -119,7 +151,7 @@ class roulette(commands.Cog):
         second18Button.callback = betButtonCallback
         betSpecificNumberButton.callback = betSpecificNumberButtonCallback
 
-    def GetBoard(self):
+    def SetBoardAndCategories(self):
         self.board = """```fix
   _____________________________________________________________________
  / |    |    |    |    |    |    |    |    |    |    |    |    ||      |
