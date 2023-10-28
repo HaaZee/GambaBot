@@ -26,7 +26,7 @@ extensions = [
     "commands.pay",
     "commands.stats",
     "commands.help", # FIXME: This doesn't return any commands when ti runs
-    "commands.customGamble"
+    "commands.Gamba"
 ]
 
 bot.load_extensions(extensions)
