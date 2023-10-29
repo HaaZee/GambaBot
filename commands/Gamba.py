@@ -1,5 +1,3 @@
-import supabase
-from typing import Optional
 import nextcord
 from nextcord.interactions import Interaction
 from nextcord.ui import *
