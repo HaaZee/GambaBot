@@ -9,6 +9,10 @@
     - RIOT_KEY
 3. Run `python main.py`
 
+## Docker
+1. docker build -t haazee/gambabot:latest . 
+2. docker push haazee/gambabot:latest
+
 ## Enhancements
 - Custom bets, like twitch predictions
 - Roulette (Not sure how this works?)
