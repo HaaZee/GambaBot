@@ -20,23 +20,20 @@ class betInput(nextcord.ui.Modal):
         self.add_item(self.betAmount)
 
     async def callback(self, interaction : nextcord.Interaction):
-            betValue = int(self.betAmount.value)
-            insertGambleData = {'id': interaction.user.id, self.choice: betValue}
-            existingUsersData = self.supabase.table('Users').select("coins").eq("id", interaction.user.id).execute().data[0]
-            if existingUsersData["coins"] < betValue:
-                await interaction.send("Your bet was not made. Insufficient funds.", ephemeral=True)
-                return
-            if self.supabase.table('customGamble').select('id').eq("owner", True).execute().data[0]['id'] == interaction.user.id:
-                await interaction.send("Your bet was not made, you created this gamble!", ephemeral=True)
-                return
-            newCoinBalance = existingUsersData["coins"] - betValue
-            updateUsersData = {"coins": newCoinBalance}
-            self.supabase.table('Users').update(updateUsersData).eq("id", interaction.user.id).execute().data
-            self.supabase.table('customGamble').upsert(insertGambleData).execute()
+        betValue = int(self.betAmount.value)
+        insertGambleData = {'id': interaction.user.id, self.choice: betValue}
+        existingUsersData = self.supabase.table('Users').select("coins").eq("id", interaction.user.id).execute().data[0]
+        if existingUsersData["coins"] < betValue:
+            await interaction.send("Your bet was not made. Insufficient funds.", ephemeral=True)
+            return
+        if self.supabase.table('customGamble').select('id').eq("owner", True).execute().data[0]['id'] == interaction.user.id:
+            await interaction.send("Your bet was not made, you created this gamble!", ephemeral=True)
+            return
+        newCoinBalance = existingUsersData["coins"] - betValue
+        updateUsersData = {"coins": newCoinBalance}
+        self.supabase.table('Users').update(updateUsersData).eq("id", interaction.user.id).execute().data
+        self.supabase.table('customGamble').upsert(insertGambleData).execute()
             
-
-
-        
 
 class Dropdown(nextcord.ui.Select):
     def __init__(self, supabase):
@@ -48,25 +45,19 @@ class Dropdown(nextcord.ui.Select):
         ]
         super().__init__(placeholder="Cashout Options", min_values=1, max_values=1, options=self.selectOptions)
     
-    
-    
-    
-
     async def callback(self, interaction : Interaction):
         fetchWinners = self.supabase.table('customGamble').select(f"id, {self.values[0]}").neq(self.values[0], 0).execute().data
         totalWon = 0
         for winner in fetchWinners:
             userData = self.supabase.table('Users').select("id, coins").eq("id", winner['id']).execute().data[0]
             updateData = {}
-            updateData['coins'] = int(userData['coins'])+ int((winner[self.values[0]]))*2
+            updateData['coins'] = int(userData['coins'])+ int(winner[self.values[0]])*2
             totalWon = totalWon + int((winner[self.values[0]]))
             self.supabase.table('Users').update(updateData).eq("id", winner['id']).execute()
         self.supabase.table('customGamble').delete().neq("id", 0).execute()
         await interaction.message.edit(content=f"Total Money won on this bet: {totalWon}!", view=None)
         
         
-        
-
 class dropdownView(nextcord.ui.View, Interaction):
     def __init__(self, supabase):
         self.supabase = supabase
@@ -89,10 +80,6 @@ class gamba(commands.Cog):
         ownerInitial = {'id': interaction.user.id, 'owner' : True}
         self.supabase.table('customGamble').upsert(ownerInitial).execute()
         
-        async def buttonCallback(interaction : Interaction):
-            modal = betInput(interaction.data["custom_id"], self.supabase)
-            await interaction.response.send_modal(modal)
-    
         bet_message_embed = nextcord.Embed(
             title="New Bet",
             description=f"Bet: {bettitle}",
@@ -119,9 +106,6 @@ class gamba(commands.Cog):
         lockedView.add_item(payoutButton)
         payoutView = dropdownView(self.supabase)
         
-        
-        
-        
 
         await interaction.send(embed=bet_message_embed, view=view)
         
@@ -141,20 +125,16 @@ class gamba(commands.Cog):
                 return
             await interaction.message.edit(embed=bet_message_embed, view=payoutView)
 
+        async def buttonCallback(interaction : Interaction):
+            modal = betInput(interaction.data["custom_id"], self.supabase)
+            await interaction.response.send_modal(modal)
 
-            
-        
-
-    
         outcome1_button.callback = buttonCallback
         outcome2_button.callback = buttonCallback
         lock_button.callback = lock_button_callback
         unlockButton.callback = unlock_button_callback
         payoutButton.callback = payoutButton_callback
         submitButton.callback = payoutView.dropdownMenu.callback
-
-
-    
 
 
 
