@@ -118,7 +118,7 @@ class roulette(commands.Cog):
                     userData = self.supabase.table('Users').select("id, coins").eq("id", winner['id']).execute().data[0]
                     wager = winner[category]
                     updateData = {}
-                    updateData["coins"] = userData["coins"] + wager
+                    updateData["coins"] = userData["coins"] + (wager*2)
                     self.supabase.table('Users').update(updateData).eq("id", winner['id']).execute()
                     await channel.send(f"{(await self.bot.fetch_user(winner['id'])).mention} won {wager} with a winning bet on {category}. New balance: {updateData['coins']}")
 
