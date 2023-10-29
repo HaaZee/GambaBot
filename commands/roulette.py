@@ -33,8 +33,6 @@ class Bet(nextcord.ui.Modal):
             return
         self.supabase.table('Roulette').upsert(insertRouletteData).execute()
 
-        # TODO: Display a live bets screen
-
 class roulette(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -44,8 +42,11 @@ class roulette(commands.Cog):
 
     @nextcord.slash_command(name="roulette", description="Start a roulette round!")
     async def roulette(self, interaction : nextcord.Interaction):
-        if interaction.user.id != 289006054128484352: # FIXME: Temporary disable command for everyone else
+        rouletteData = self.supabase.table('Roulette').select(f"id").neq("id", 0).execute().data
+        if len(rouletteData) >= 1:
+            await interaction.send("Cannot start a new roulette as one is alreday on going.")
             return
+
         self.SetBoardAndCategories()
         channelName = interaction.channel.name
         channel = nextcord.utils.get(interaction.guild.channels, name=channelName)
@@ -135,6 +136,8 @@ class roulette(commands.Cog):
             await interaction.response.send_modal(modal)
 
         async def betSpecificNumberButtonCallback(interaction):
+            # UNFINISHED.
+            await interaction.send("Unfinished feature. Sorry :)")
             return
         
         first12Button.callback = betButtonCallback
