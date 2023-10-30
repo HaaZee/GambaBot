@@ -88,18 +88,18 @@ class gamba(commands.Cog):
         outcome1_button = Button(style=nextcord.ButtonStyle.success, label="Yes!", disabled=False, custom_id="YES")
         outcome2_button = Button(style=nextcord.ButtonStyle.danger, label="No!", disabled=False, custom_id="NO")
         
-        lock_button = Button(emoji="🔐", disabled=False)
+        lock_button = Button(emoji="🔐", disabled=False, custom_id='lock')
         # Create a view that contains the buttons
-        view = View(timeout=120)
+        view = View(timeout=None)
         view.add_item(outcome1_button)
         view.add_item(outcome2_button)
         view.add_item(lock_button)
         # Send the bet message with the buttons
 
-        unlockButton = Button(emoji="🔐", disabled=False)
-        payoutButton = Button(label="Payout")
-        submitButton = Button(label="submit", disabled=True)
-        lockedView = View()
+        unlockButton = Button(emoji="🔐", disabled=False, custom_id="unlock")
+        payoutButton = Button(label="Payout", custom_id="payout")
+        submitButton = Button(label="submit", disabled=True, custom_id="submit")
+        lockedView = View(timeout=None)
         lockedView.add_item(unlockButton)
         lockedView.add_item(payoutButton)
         payoutView = dropdownView(self.supabase)
