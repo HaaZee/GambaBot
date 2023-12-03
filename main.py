@@ -27,6 +27,7 @@ extensions = [
     "commands.stats",
     "commands.Gamba",
     "commands.help", # FIXME: This doesn't return any commands when it runs
+    "commands.roulette",
     "commands.redeem",
     "commands.register"
 ]
